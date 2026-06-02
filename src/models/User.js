@@ -13,6 +13,14 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: { type: String, required: true },
     language: { type: String, default: "no" },
+    // Email verification
+    emailVerified: { type: Boolean, default: false },
+    verifyToken: { type: String, default: null },
+    verifyTokenExpires: { type: Date, default: null },
+    // Moderation
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    banned: { type: Boolean, default: false },
+    bannedReason: { type: String, default: null },
     settings: {
       fontSize: { type: Number, default: 14 },
       theme: { type: String, default: "dark" },

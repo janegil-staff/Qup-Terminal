@@ -1,7 +1,13 @@
+# sandbox/Dockerfile
+# The image each terminal session runs inside. Debian slim + a working toolset.
+# Runs as a non-root user. Build once:
+#   docker build -t qup-terminal-sandbox:latest ./sandbox
+
 FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Core tooling + python + node + build tools (the "fuller" image).
 RUN apt-get update && apt-get install -y --no-install-recommends \
       bash coreutils ca-certificates \
       curl wget git vim nano less \
@@ -10,12 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       iproute2 procps \
     && rm -rf /var/lib/apt/lists/*
 
+# Node.js LTS via NodeSource.
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
+# Non-root user with a real home. Sessions run as this user, never root.
 RUN useradd --create-home --shell /bin/bash sandbox
 
+# A friendly prompt + landing message.
 RUN printf '%s\n' \
       'export PS1="\[\e[38;5;173m\]qup\[\e[0m\]:\w\$ "' \
       'echo "Qup Terminal sandbox — isolated, disposable session."' \

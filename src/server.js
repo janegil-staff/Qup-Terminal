@@ -23,10 +23,14 @@ import { connectDb } from "./lib/db.js";
 import { verifyToken } from "./lib/tokens.js";
 import authRoutes from "./routes/auth.js";
 import hostsRoutes from "./routes/hosts.js";
+import adminRoutes from "./routes/admin.js";
+import lessonsRoutes from "./routes/lessons.js";
 import { Session } from "./models/Session.js";
 import { Host } from "./models/Host.js";
+import { User } from "./models/User.js";
 import { decrypt } from "./lib/crypto.js";
 import { openSshSession } from "./lib/ssh.js";
+import { authLimiter, apiLimiter } from "./middleware/rateLimit.js";
 import {
   spawnSandbox,
   killContainer,
@@ -37,18 +41,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "127.0.0.1";
+// Max concurrent terminal sessions per user (resource-exhaustion guard).
+const MAX_SESSIONS_PER_USER = Number(process.env.MAX_SESSIONS_PER_USER || 5);
+
 
 // ── Message protocol ─────────────────────────────────────────────────────────
 // client → server: JSON control { type:"resize"|"ping" } else raw keystrokes
 // server → client: raw bytes are output; JSON for { type:"exit"|"error"|"pong" }
 
 const app = express();
+// Behind a reverse proxy (Caddy/nginx) in production, so per-IP rate limiting
+// uses the real client IP from X-Forwarded-For.
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
-app.use("/auth", authRoutes);
-app.use("/hosts", hostsRoutes);
+app.use("/auth", authLimiter, authRoutes);
+app.use("/hosts", apiLimiter, hostsRoutes);
+app.use("/admin", apiLimiter, adminRoutes);
+app.use("/lessons", apiLimiter, lessonsRoutes);
 
 const server = http.createServer(app);
 
@@ -92,6 +104,43 @@ wss.on("connection", async (ws, req) => {
     `[+] ${isSsh ? "ssh" : "sandbox"} session opened (user ${userId})`
   );
 
+  // Reject banned users immediately (their token may still be valid).
+  try {
+    const u = await User.findById(userId).select("banned");
+    if (u && u.banned) {
+      ws.send(
+        JSON.stringify({ type: "error", message: "Account suspended." })
+      );
+      ws.close();
+      return;
+    }
+  } catch {
+    /* if the check fails, fall through to the session-cap guard */
+  }
+
+  // Concurrent-session cap: refuse if the user already has the max active.
+  try {
+    const active = await Session.countDocuments({ userId, status: "active" });
+    if (active >= MAX_SESSIONS_PER_USER) {
+      ws.send(
+        JSON.stringify({
+          type: "error",
+          message: `Session limit reached (${MAX_SESSIONS_PER_USER}). Close another session first.`,
+        })
+      );
+      ws.close();
+      return;
+    }
+  } catch (e) {
+    console.error("session count failed:", e.message);
+    // Fail closed on the cap check — safer to refuse than to allow unbounded.
+    ws.send(
+      JSON.stringify({ type: "error", message: "Could not start session." })
+    );
+    ws.close();
+    return;
+  }
+
   // Record a Session row (metadata only — never the transcript).
   let sessionDoc = null;
   try {
@@ -124,6 +173,14 @@ wss.on("connection", async (ws, req) => {
         secret,
         cols: 80,
         rows: 24,
+        knownHostKey: host.knownHostKey || null,
+        onHostKey: (fp) => {
+          // First connection to this host: pin the fingerprint.
+          if (!host.knownHostKey) {
+            host.knownHostKey = fp;
+            host.save().catch(() => {});
+          }
+        },
       });
       host.lastUsedAt = new Date();
       host.save().catch(() => {});
@@ -278,11 +335,27 @@ wss.on("connection", async (ws, req) => {
 
 async function start() {
   await connectDb();
+  // Any session still "active" in the DB after a restart is orphaned (its
+  // container/SSH conn died with the old process). Mark them ended so the
+  // per-user concurrent cap isn't blocked by ghosts.
+  try {
+    const r = await Session.updateMany(
+      { status: "active" },
+      { $set: { status: "ended", endedAt: new Date() } }
+    );
+    if (r.modifiedCount) {
+      console.log(`[startup] cleared ${r.modifiedCount} orphaned session(s)`);
+    }
+  } catch (e) {
+    console.error("orphan sweep failed:", e.message);
+  }
   server.listen(PORT, HOST, () => {
     console.log(`Qup Terminal backend`);
     console.log(`  HTTP  : http://${HOST}:${PORT}  (/auth, /health)`);
     console.log(`  WS    : ws://${HOST}:${PORT}/term?token=<accessJWT>`);
-    console.log(`  Auth  : ON   Sandbox: ON (Docker per session)`);
+    console.log(
+      `  Auth  : ON   Sandbox: ON   Max sessions/user: ${MAX_SESSIONS_PER_USER}`
+    );
   });
 }
 

@@ -18,6 +18,9 @@ const hostSchema = new mongoose.Schema(
     port: { type: Number, default: 22 },
     username: { type: String, required: true },
     authType: { type: String, enum: ["password", "key"], default: "password" },
+    // Pinned SSH host-key fingerprint (SHA256:…). Captured on first connect;
+    // a mismatch on later connects rejects the session (MITM guard).
+    knownHostKey: { type: String, default: null },
     // Encrypted blobs (never plaintext). Shape: { iv, tag, data } base64.
     secretEnc: {
       iv: String,
