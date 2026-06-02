@@ -213,6 +213,145 @@ export const LESSONS = [
     pass: "PASS",
     hint: "echo apple > list.txt   then   echo banana >> list.txt",
   },
+  {
+    id: "11-mkdir-p",
+    unit: "u2-files",
+    title: "Make nested folders",
+    explanation:
+      "Normally `mkdir` only makes one folder, and fails if the parent doesn't " +
+      "exist. `mkdir -p` creates a whole chain of folders at once, making any " +
+      "missing parents along the way.",
+    task:
+      "Create the nested path  a/b/c  in one command\n" +
+      "(hint: mkdir -p a/b/c)",
+    check: "test -d ~/a/b/c && echo PASS",
+    pass: "PASS",
+    hint: "Run:  mkdir -p a/b/c",
+  },
+  {
+    id: "12-rmdir",
+    unit: "u2-files",
+    title: "Remove an empty folder",
+    explanation:
+      "`rmdir` removes a folder — but only if it's empty. It's a safer cousin " +
+      "of `rm`, because it refuses to delete a folder that still has things in " +
+      "it. Make an empty folder, then remove it with rmdir.",
+    task:
+      "Make a folder  empty , then remove it with rmdir\n" +
+      "(hint: mkdir empty ; rmdir empty)",
+    check:
+      'grep -qE "rmdir +empty" ~/.bash_history && ! test -d ~/empty && echo PASS',
+    pass: "PASS",
+    hint: "mkdir empty   then   rmdir empty",
+  },
+  {
+    id: "13-touch",
+    unit: "u2-files",
+    title: "Create an empty file",
+    explanation:
+      "`touch` creates an empty file if it doesn't exist (and updates its " +
+      "timestamp if it does). It's the quickest way to make a blank file.",
+    task:
+      "Create an empty file called  marker\n" +
+      "(hint: touch marker)",
+    check: "test -f ~/marker && echo PASS",
+    pass: "PASS",
+    hint: "Run:  touch marker",
+  },
+  {
+    id: "14-head",
+    unit: "u3-viewing",
+    title: "See the start of a file",
+    explanation:
+      "`head` shows the first lines of a file (10 by default, or use `-n` to " +
+      "pick how many). Great for peeking at the top of a big file without " +
+      "opening the whole thing.",
+    task:
+      "Make a file  numbers.txt  with the numbers 1 to 10, then save its first " +
+      "3 lines into  top.txt\n" +
+      "(hint: seq 10 > numbers.txt ; head -n 3 numbers.txt > top.txt)",
+    check:
+      'test "$(wc -l < ~/top.txt 2>/dev/null)" = "3" && head -n1 ~/top.txt | grep -qx 1 && tail -n1 ~/top.txt | grep -qx 3 && echo PASS',
+    pass: "PASS",
+    hint: "seq 10 > numbers.txt   then   head -n 3 numbers.txt > top.txt",
+  },
+  {
+    id: "15-tail",
+    unit: "u3-viewing",
+    title: "See the end of a file",
+    explanation:
+      "`tail` is the opposite of head — it shows the LAST lines of a file. It's " +
+      "handy for checking the most recent entries in a log.",
+    task:
+      "Make a file  numbers.txt  with the numbers 1 to 10, then save its last " +
+      "3 lines into  bottom.txt\n" +
+      "(hint: seq 10 > numbers.txt ; tail -n 3 numbers.txt > bottom.txt)",
+    check:
+      'test "$(wc -l < ~/bottom.txt 2>/dev/null)" = "3" && head -n1 ~/bottom.txt | grep -qx 8 && tail -n1 ~/bottom.txt | grep -qx 10 && echo PASS',
+    pass: "PASS",
+    hint: "seq 10 > numbers.txt   then   tail -n 3 numbers.txt > bottom.txt",
+  },
+  {
+    id: "16-less",
+    unit: "u3-viewing",
+    title: "Page through a long file",
+    explanation:
+      "`less` opens a file in a scrollable viewer — useful for long files. " +
+      "Scroll with the arrow keys, and press `q` to quit. (Make a file first so " +
+      "you have something to view.)",
+    task:
+      "Make a file  big.txt  (any contents), then open it with less and press q " +
+      "to quit\n" +
+      "(hint: seq 50 > big.txt ; less big.txt   — then press q)",
+    check: 'grep -qE "(^| )less +" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "seq 50 > big.txt   then   less big.txt   (press q to exit)",
+  },
+  {
+    id: "17-wc",
+    unit: "u3-viewing",
+    title: "Count lines",
+    explanation:
+      "`wc` (word count) counts lines, words, and characters. With `-l` it " +
+      "counts just lines — useful for 'how many entries are in this file?'",
+    task:
+      "Make a file  lines.txt  with 5 lines, then save its line count into  count.txt\n" +
+      "(hint: seq 5 > lines.txt ; wc -l < lines.txt > count.txt)",
+    check: 'grep -qE "(^| )5$" ~/count.txt 2>/dev/null && echo PASS',
+    pass: "PASS",
+    hint: "seq 5 > lines.txt   then   wc -l < lines.txt > count.txt",
+  },
+  {
+    id: "18-file",
+    unit: "u3-viewing",
+    title: "What kind of file is it?",
+    explanation:
+      "`file` inspects a file and tells you what type it is (text, image, " +
+      "program, …) by looking at its contents — not just its name. Try it on " +
+      "any file.",
+    task:
+      "Make a file  thing.txt , then run file on it\n" +
+      "(hint: touch thing.txt ; file thing.txt)",
+    check: 'grep -qE "(^| )file +" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "touch thing.txt   then   file thing.txt",
+  },
+  {
+    id: "19-cat-multi",
+    unit: "u3-viewing",
+    title: "Join files together",
+    explanation:
+      "`cat` can take several files at once and print them one after another. " +
+      "Combined with `>`, that lets you join files into a new one.",
+    task:
+      "Make  one.txt  containing  alpha  and  two.txt  containing  beta , then " +
+      "join them into  both.txt\n" +
+      "(hint: echo alpha > one.txt ; echo beta > two.txt ; cat one.txt two.txt > both.txt)",
+    check:
+      'grep -qx alpha ~/both.txt 2>/dev/null && grep -qx beta ~/both.txt 2>/dev/null && test "$(wc -l < ~/both.txt)" = "2" && echo PASS',
+    pass: "PASS",
+    hint: "cat one.txt two.txt > both.txt",
+  },
 ];
 
 export function getLesson(id) {
