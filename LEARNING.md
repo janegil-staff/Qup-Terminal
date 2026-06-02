@@ -68,3 +68,23 @@ For history checks to work, the sandbox image writes history immediately
 All 10 checks were validated against correct AND incorrect states (no false
 passes). To add more lessons, append to LESSONS in src/lib/lessons.js using
 whichever check style fits — no code changes needed.
+
+## Curriculum plan — ~50 exercises across 8 units
+
+Target: a complete beginner course of ~50 well-verified exercises (NOT a giant
+unverified bank). 10 done so far. Units defined in UNITS (src/lib/lessons.js);
+tag each exercise with its `unit` id. The app groups the list by unit and shows
+per-unit progress (done/total).
+
+1. Getting around (8)   — pwd✓ ls✓ ls-l ls-a cd✓ cd.. cd~ nested-dirs
+2. Files & folders (10) — mkdir✓ create✓ cat✓ cp✓ mv✓ rm✓ append✓ mkdir-p rmdir touch
+3. Viewing & reading (6)— head tail less wc file cat-multi
+4. Searching (6)        — grep grep-i grep-r find-name find-type which
+5. Pipes & redirection (6) — pipe ls|grep sort uniq >vs>> 2>
+6. Permissions (6)      — rwx chmod-num chmod+x chmod-sym chown make-executable
+7. Processes & system (5) — ps top kill df/du env
+8. Editing & scripting (5)— nano write-script run-script vars loop
+
+≈52 total, ~42 left to author. Write in careful batches; validate each check
+against correct AND incorrect states before shipping (no false passes). Mix
+side-effect checks (file artifacts) and history checks (traceless commands).

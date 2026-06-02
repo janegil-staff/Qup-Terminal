@@ -7,12 +7,12 @@ import express from "express";
 import { requireAuth } from "../middleware/auth.js";
 import { Session } from "../models/Session.js";
 import { User } from "../models/User.js";
-import { LESSONS, getLesson, verifyInContainer } from "../lib/lessons.js";
+import { LESSONS, getLesson, verifyInContainer, UNITS } from "../lib/lessons.js";
 
 const router = express.Router();
 router.use(requireAuth);
 
-// GET /lessons?offset=0&limit=20 — paginated curriculum + user progress
+// GET /lessons?offset=0&limit=20 — paginated curriculum + user progress + units
 router.get("/", async (req, res) => {
   const user = await User.findById(req.userId).select("completedLessons");
   const completed = user?.completedLessons || [];
@@ -23,6 +23,7 @@ router.get("/", async (req, res) => {
 
   const page = LESSONS.slice(offset, offset + limit).map((l) => ({
     id: l.id,
+    unit: l.unit || null,
     title: l.title,
     explanation: l.explanation,
     task: l.task,
@@ -30,8 +31,21 @@ router.get("/", async (req, res) => {
     done: completed.includes(l.id),
   }));
 
+  // Per-unit progress (over the whole bank, not just this page).
+  const units = UNITS.map((u) => {
+    const inUnit = LESSONS.filter((l) => l.unit === u.id);
+    return {
+      id: u.id,
+      title: u.title,
+      order: u.order,
+      total: inUnit.length,
+      done: inUnit.filter((l) => completed.includes(l.id)).length,
+    };
+  });
+
   res.json({
     lessons: page,
+    units,
     total,
     offset,
     limit,
