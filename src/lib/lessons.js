@@ -352,6 +352,198 @@ export const LESSONS = [
     pass: "PASS",
     hint: "cat one.txt two.txt > both.txt",
   },
+  {
+    id: "20-grep",
+    unit: "u4-searching",
+    title: "Search inside a file",
+    explanation:
+      "`grep` finds lines that contain a word or pattern. Give it the word and " +
+      "a file, and it prints every matching line — the workhorse of searching.",
+    task:
+      "Make  fruits.txt  with three lines (apple, banana, cherry), then save the " +
+      "line containing  banana  into  found.txt\n" +
+      "(hint: printf 'apple\\nbanana\\ncherry\\n' > fruits.txt ; grep banana fruits.txt > found.txt)",
+    check:
+      'grep -qx banana ~/found.txt 2>/dev/null && test "$(wc -l < ~/found.txt)" = "1" && echo PASS',
+    pass: "PASS",
+    hint: "grep banana fruits.txt > found.txt",
+  },
+  {
+    id: "21-grep-i",
+    unit: "u4-searching",
+    title: "Search ignoring case",
+    explanation:
+      "By default grep cares about capital letters: `apple` won't match " +
+      "`Apple`. The `-i` flag makes grep ignore case, matching either.",
+    task:
+      "Make  greet.txt  containing the line  Hello , then use grep -i to find " +
+      "it searching for lowercase  hello , saving the result into  ci.txt\n" +
+      "(hint: echo Hello > greet.txt ; grep -i hello greet.txt > ci.txt)",
+    check:
+      'grep -qx Hello ~/ci.txt 2>/dev/null && grep -qE "grep +-i" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "echo Hello > greet.txt   then   grep -i hello greet.txt > ci.txt",
+  },
+  {
+    id: "22-grep-r",
+    unit: "u4-searching",
+    title: "Search through folders",
+    explanation:
+      "`grep -r` (recursive) searches inside every file in a folder and its " +
+      "sub-folders — perfect for 'where did I write that, somewhere in this " +
+      "project?'",
+    task:
+      "Make a folder  proj  with a file inside containing the word  needle , " +
+      "then search the whole folder with grep -r\n" +
+      "(hint: mkdir -p proj ; echo 'needle here' > proj/note.txt ; grep -r needle proj)",
+    check: 'grep -qE "grep +-r" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "grep -r needle proj",
+  },
+  {
+    id: "23-find-name",
+    unit: "u4-searching",
+    title: "Find a file by name",
+    explanation:
+      "`find` locates files by name anywhere under a folder. `find . -name X` " +
+      "searches the current folder and everything below it for X.",
+    task:
+      "Create  target.txt  inside a nested folder, then find it and save the " +
+      "result into  result.txt\n" +
+      "(hint: mkdir -p hunt/deep ; touch hunt/deep/target.txt ; find . -name target.txt > result.txt)",
+    check:
+      'test -s ~/result.txt && grep -q target.txt ~/result.txt && echo PASS',
+    pass: "PASS",
+    hint: "find . -name target.txt > result.txt",
+  },
+  {
+    id: "24-find-type",
+    unit: "u4-searching",
+    title: "Find only folders",
+    explanation:
+      "`find` can filter by type. `-type d` finds only directories (folders), " +
+      "`-type f` only files. Useful when you want one but not the other.",
+    task:
+      "List only the folders under your current location\n" +
+      "(hint: find . -type d)",
+    check: 'grep -qE "find .*-type +d" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "Run:  find . -type d",
+  },
+  {
+    id: "25-which",
+    unit: "u4-searching",
+    title: "Where does a command live?",
+    explanation:
+      "`which` tells you the full path of a command's program — e.g. " +
+      "`which ls` shows where the ls program actually is on disk. Handy for " +
+      "checking what will run.",
+    task:
+      "Find out where the  ls  command lives\n" +
+      "(hint: which ls)",
+    check: 'grep -qE "(^| )which +" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "Run:  which ls",
+  },
+  {
+    id: "26-pipe",
+    unit: "u5-pipes",
+    title: "Connect commands with a pipe",
+    explanation:
+      "The pipe `|` sends the output of one command straight into another. " +
+      "`ls | wc -l` feeds the file listing into wc, counting how many items " +
+      "there are — without making a file in between.",
+    task:
+      "Make a folder  pd  with 3 files in it, then count them by piping ls into " +
+      "wc -l, saving the number into  pcount.txt\n" +
+      "(hint: mkdir pd ; touch pd/a pd/b pd/c ; cd pd ; ls | wc -l > ~/pcount.txt)",
+    check:
+      'grep -qE "(^| )3$" ~/pcount.txt 2>/dev/null && grep -qE "\\|" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "ls | wc -l > ~/pcount.txt   (run it inside the pd folder)",
+  },
+  {
+    id: "27-ls-grep",
+    unit: "u5-pipes",
+    title: "Filter a listing",
+    explanation:
+      "Pipe `ls` into `grep` to show only the files whose names match. " +
+      "`ls | grep cat` lists just the items containing 'cat'.",
+    task:
+      "Make a folder  gd  with files  cat.txt , dog.txt , catfish.txt , then " +
+      "list only the ones containing  cat  into  gfilter.txt\n" +
+      "(hint: cd gd ; ls | grep cat > ~/gfilter.txt)",
+    check:
+      'grep -q cat.txt ~/gfilter.txt 2>/dev/null && grep -q catfish.txt ~/gfilter.txt 2>/dev/null && ! grep -q dog.txt ~/gfilter.txt 2>/dev/null && echo PASS',
+    pass: "PASS",
+    hint: "ls | grep cat > ~/gfilter.txt",
+  },
+  {
+    id: "28-sort",
+    unit: "u5-pipes",
+    title: "Sort lines",
+    explanation:
+      "`sort` puts lines in order (alphabetical by default). Give it a file and " +
+      "it prints the sorted version — great for tidying lists.",
+    task:
+      "Make  uns.txt  with the lines  cherry , apple , banana  (in that order), " +
+      "then sort it into  sorted.txt\n" +
+      "(hint: printf 'cherry\\napple\\nbanana\\n' > uns.txt ; sort uns.txt > sorted.txt)",
+    check:
+      'head -n1 ~/sorted.txt 2>/dev/null | grep -qx apple && tail -n1 ~/sorted.txt | grep -qx cherry && echo PASS',
+    pass: "PASS",
+    hint: "sort uns.txt > sorted.txt",
+  },
+  {
+    id: "29-uniq",
+    unit: "u5-pipes",
+    title: "Remove duplicates",
+    explanation:
+      "`uniq` removes adjacent duplicate lines — so it's usually paired with " +
+      "sort (which groups duplicates together): `sort file | uniq`.",
+    task:
+      "Make  dups.txt  with repeated lines (a, a, b, b, b, c), then produce a " +
+      "de-duplicated  uniq.txt  using sort and uniq\n" +
+      "(hint: printf 'a\\na\\nb\\nb\\nb\\nc\\n' > dups.txt ; sort dups.txt | uniq > uniq.txt)",
+    check:
+      'test "$(wc -l < ~/uniq.txt 2>/dev/null)" = "3" && grep -qx a ~/uniq.txt && grep -qx b ~/uniq.txt && grep -qx c ~/uniq.txt && echo PASS',
+    pass: "PASS",
+    hint: "sort dups.txt | uniq > uniq.txt",
+  },
+  {
+    id: "30-append-redirect",
+    unit: "u5-pipes",
+    title: "Overwrite vs append",
+    explanation:
+      "A reminder that matters: `>` REPLACES a file's contents, while `>>` ADDS " +
+      "to the end. Mixing them up erases data — so it's worth practising the " +
+      "difference.",
+    task:
+      "Create  log.txt  with the line  first , then APPEND a second line  second " +
+      "(without erasing the first)\n" +
+      "(hint: echo first > log.txt ; echo second >> log.txt)",
+    check:
+      'test "$(wc -l < ~/log.txt 2>/dev/null)" = "2" && head -n1 ~/log.txt | grep -qx first && tail -n1 ~/log.txt | grep -qx second && echo PASS',
+    pass: "PASS",
+    hint: "echo first > log.txt   then   echo second >> log.txt",
+  },
+  {
+    id: "31-stderr",
+    unit: "u5-pipes",
+    title: "Capture error messages",
+    explanation:
+      "Normal output and ERROR output are separate streams. `2>` redirects just " +
+      "the errors to a file. Run a command that fails and catch its error " +
+      "message in a file.",
+    task:
+      "Run a command that errors (e.g. listing a folder that doesn't exist) and " +
+      "send the error message into  err.txt\n" +
+      "(hint: ls /does-not-exist 2> err.txt)",
+    check:
+      'test -s ~/err.txt 2>/dev/null && grep -qiE "no such file|cannot access" ~/err.txt && grep -qE "2>" ~/.bash_history && echo PASS',
+    pass: "PASS",
+    hint: "ls /does-not-exist 2> err.txt",
+  },
 ];
 
 export function getLesson(id) {
