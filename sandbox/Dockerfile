@@ -25,12 +25,19 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 RUN useradd --create-home --shell /bin/bash sandbox
 
 # A friendly prompt + landing message.
+# Bash config goes in /etc/profile.d (on the read-only root, NOT the home dir),
+# because the session mounts an empty tmpfs over /home/sandbox which would hide
+# anything we put in ~/.bashrc at build time. profile.d is sourced by login
+# shells and survives the ephemeral home.
 RUN printf '%s\n' \
       'export PS1="\[\e[38;5;173m\]qup\[\e[0m\]:\w\$ "' \
-      'echo "Qup Terminal sandbox — isolated, disposable session."' \
-      'echo "Your home is writable; the rest of the system is not."' \
-      > /home/sandbox/.bashrc \
-    && chown sandbox:sandbox /home/sandbox/.bashrc
+      'export HISTFILE=$HOME/.bash_history' \
+      'export PROMPT_COMMAND="history -a"' \
+      'shopt -s histappend 2>/dev/null || true' \
+      'touch "$HISTFILE" 2>/dev/null || true' \
+      'if [ -z "$QUP_WELCOMED" ]; then export QUP_WELCOMED=1; echo "Qup Terminal sandbox — isolated, disposable session."; echo "Your home is writable; the rest of the system is not."; fi' \
+      > /etc/profile.d/qup.sh \
+    && chmod 644 /etc/profile.d/qup.sh
 
 USER sandbox
 WORKDIR /home/sandbox

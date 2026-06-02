@@ -106,6 +106,7 @@ export function buildDockerArgs({ name, cols, rows }) {
     `LINES=${rows || 24}`,
     IMAGE,
     "/bin/bash",
+    "-l",
   ];
   return args;
 }

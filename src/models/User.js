@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ["user", "admin"], default: "user" },
     banned: { type: Boolean, default: false },
     bannedReason: { type: String, default: null },
+    // Linux-learning progress: IDs of lessons the user has completed.
+    completedLessons: { type: [String], default: [] },
     settings: {
       fontSize: { type: Number, default: 14 },
       theme: { type: String, default: "dark" },

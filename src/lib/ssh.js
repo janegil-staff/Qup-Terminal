@@ -154,3 +154,91 @@ export function openSshSession(opts) {
     }
   });
 }
+
+// Run a single command over a fresh SSH connection and return its output.
+// Used by the Pi panel (status reads, quick actions) — request/response, not
+// an interactive shell. Reuses host-key pinning. Resolves
+// { stdout, stderr, code }.
+export function runSshCommand(opts) {
+  const {
+    host,
+    port = 22,
+    username,
+    authType,
+    secret,
+    command,
+    knownHostKey = null,
+    onHostKey = null,
+    timeoutMs = 15000,
+  } = opts;
+
+  return new Promise((resolve, reject) => {
+    const conn = new Client();
+    let settled = false;
+    const done = (fn, arg) => {
+      if (settled) return;
+      settled = true;
+      try {
+        conn.end();
+      } catch {
+        /* ignore */
+      }
+      fn(arg);
+    };
+
+    const timer = setTimeout(
+      () => done(reject, new Error("SSH command timed out")),
+      timeoutMs
+    );
+
+    const connectConfig = {
+      host,
+      port,
+      username,
+      readyTimeout: 15000,
+      hostVerifier: (keyBuf) => {
+        const fp = keyFingerprint(keyBuf);
+        if (knownHostKey) return fp === knownHostKey;
+        if (onHostKey) {
+          try {
+            onHostKey(fp);
+          } catch {
+            /* ignore */
+          }
+        }
+        return true;
+      },
+    };
+    if (authType === "key") connectConfig.privateKey = secret;
+    else connectConfig.password = secret;
+
+    conn.on("ready", () => {
+      conn.exec(command, (err, stream) => {
+        if (err) {
+          clearTimeout(timer);
+          return done(reject, err);
+        }
+        let stdout = "";
+        let stderr = "";
+        stream.on("data", (d) => (stdout += d.toString("utf8")));
+        stream.stderr.on("data", (d) => (stderr += d.toString("utf8")));
+        stream.on("close", (code) => {
+          clearTimeout(timer);
+          done(resolve, { stdout, stderr, code });
+        });
+      });
+    });
+
+    conn.on("error", (err) => {
+      clearTimeout(timer);
+      done(reject, err);
+    });
+
+    try {
+      conn.connect(connectConfig);
+    } catch (err) {
+      clearTimeout(timer);
+      done(reject, err);
+    }
+  });
+}

@@ -18,6 +18,8 @@ const hostSchema = new mongoose.Schema(
     port: { type: Number, default: 22 },
     username: { type: String, required: true },
     authType: { type: String, enum: ["password", "key"], default: "password" },
+    // Marks this host as a Raspberry Pi (enables the Pi status/control panel).
+    isPi: { type: Boolean, default: false },
     // Pinned SSH host-key fingerprint (SHA256:…). Captured on first connect;
     // a mismatch on later connects rejects the session (MITM guard).
     knownHostKey: { type: String, default: null },
