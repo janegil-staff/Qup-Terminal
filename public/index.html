@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Qup Terminal — test</title>
+    <!-- xterm.js from CDN, just for this local test page -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0f0f0f;
+        font-family: ui-monospace, monospace;
+      }
+      #bar {
+        color: #c97060;
+        padding: 8px 12px;
+        font-size: 13px;
+        border-bottom: 1px solid #2d4a6e;
+      }
+      #status {
+        color: #888;
+      }
+      #term {
+        height: calc(100% - 38px);
+        padding: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="bar">
+      Qup Terminal test — <span id="status">connecting…</span>
+    </div>
+    <div id="term"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.js"></script>
+    <script>
+      const statusEl = document.getElementById("status");
+
+      const term = new Terminal({
+        cursorBlink: true,
+        fontSize: 14,
+        theme: { background: "#0f0f0f", foreground: "#e5e5e5" },
+      });
+      const fit = new FitAddon.FitAddon();
+      term.loadAddon(fit);
+      term.open(document.getElementById("term"));
+      fit.fit();
+
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      const ws = new WebSocket(`${proto}://${location.host}/term`);
+      ws.binaryType = "arraybuffer";
+
+      function sendResize() {
+        const { cols, rows } = term;
+        ws.readyState === WebSocket.OPEN &&
+          ws.send(JSON.stringify({ type: "resize", cols, rows }));
+      }
+
+      ws.onopen = () => {
+        statusEl.textContent = "connected";
+        statusEl.style.color = "#4aba7a";
+        sendResize();
+      };
+
+      ws.onmessage = (ev) => {
+        // Control messages arrive as JSON strings; output as bytes.
+        if (typeof ev.data === "string") {
+          if (ev.data[0] === "{") {
+            try {
+              const msg = JSON.parse(ev.data);
+              if (msg.type === "exit") {
+                term.write(`\r\n\x1b[33m[process exited: ${msg.code}]\x1b[0m\r\n`);
+                return;
+              }
+              if (msg.type === "error") {
+                term.write(`\r\n\x1b[31m[error: ${msg.message}]\x1b[0m\r\n`);
+                return;
+              }
+              if (msg.type === "pong") return;
+            } catch {
+              /* fall through, treat as output */
+            }
+          }
+          term.write(ev.data);
+        } else {
+          term.write(new Uint8Array(ev.data));
+        }
+      };
+
+      ws.onclose = () => {
+        statusEl.textContent = "disconnected";
+        statusEl.style.color = "#e05050";
+      };
+      ws.onerror = () => {
+        statusEl.textContent = "error";
+        statusEl.style.color = "#e05050";
+      };
+
+      // Keystrokes → server.
+      term.onData((data) => {
+        ws.readyState === WebSocket.OPEN && ws.send(data);
+      });
+
+      // Keep PTY size in sync with the window.
+      window.addEventListener("resize", () => {
+        fit.fit();
+        sendResize();
+      });
+    </script>
+  </body>
+</html>

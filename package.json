@@ -1,0 +1,23 @@
+{
+  "name": "qup-terminal-api",
+  "version": "0.1.0",
+  "description": "Remote terminal backend — PTY over WebSocket (step 1: bare pipe, no auth/sandbox)",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "postinstall": "chmod +x node_modules/node-pty/prebuilds/darwin-*/spawn-helper 2>/dev/null; chmod +x node_modules/node-pty/build/Release/spawn-helper 2>/dev/null; true"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.0",
+    "node-pty": "^1.1.0",
+    "ws": "^8.18.0"
+  }
+}
