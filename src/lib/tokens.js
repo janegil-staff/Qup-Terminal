@@ -1,7 +1,8 @@
 // src/lib/tokens.js
 // JWT sign/verify for access + refresh tokens. Mirrors the Recover/Coachly
 // pattern: short-lived access token, longer refresh token.
-
+import dotenv from "dotenv";
+dotenv.config();
 import jwt from "jsonwebtoken";
 
 const ACCESS_TTL = process.env.ACCESS_TTL || "30m";

@@ -4,7 +4,8 @@
 // non-root, capped CPU/memory/PIDs, read-only root FS with a small writable
 // home+tmp, no privilege escalation, and --rm so the container is destroyed on
 // exit. A compromised session is bounded to its own throwaway container.
-
+import dotenv from "dotenv";
+dotenv.config();
 import pty from "node-pty";
 import crypto from "node:crypto";
 

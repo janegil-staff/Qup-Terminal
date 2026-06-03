@@ -15,7 +15,8 @@
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import { WebSocketServer } from "ws";
 

@@ -2,7 +2,8 @@
 // AES-256-GCM encryption for secrets at rest (SSH keys/passwords).
 // Key comes from APP_ENCRYPTION_KEY (32 bytes, base64 or hex). Generate one:
 //   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-
+import dotenv from "dotenv";
+dotenv.config();
 import crypto from "node:crypto";
 
 function key() {
